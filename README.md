@@ -1,1 +1,1 @@
-# SwordSprinter
+# Game Design I Semester Project
