@@ -6,6 +6,7 @@ public class PlayerController : MonoBehaviour
 {
     GameManager gameManager;
     public int HP;
+    public GameManager.combatState playerState;
     // Start is called before the first frame update
     void Start()
     {
@@ -31,10 +32,8 @@ public class PlayerController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("ye");
         if (other.gameObject.CompareTag("Enemy"))
         {
-            Debug.Log("yo");
             gameManager.EncounterStart();
         }
     }

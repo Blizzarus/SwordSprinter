@@ -1,17 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class EnemyActions : MonoBehaviour
 {
     GameManager gameManager;
+    PlayerController player;
+    IEnumerator coroutine;
     public int HP;
+    public GameManager.combatState enemyState;
     float speed;
     // Start is called before the first frame update
     void Awake()
     {
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
+        player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
         speed = gameManager.speed;
     }
 
@@ -30,12 +33,16 @@ public class EnemyActions : MonoBehaviour
         }
         else
         {
-            //attack player
+            combatActions();
         }
     }
 
-    private void attackPlayer()
+    void combatActions()
     {
-
+        if(player.playerState is 0 or (GameManager.combatState)5)
+        {
+            
+        }
+        //else if ()
     }
 }
