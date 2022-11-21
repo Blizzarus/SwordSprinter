@@ -9,62 +9,43 @@ public class PlayerController : MonoBehaviour
     GameManager gameManager;
     TextMeshProUGUI playerStatus;
     EnemyActions enemy;
-    public int HP;
     public float delayState = 0;
-    // Attack States: 0 = Left, 1 = Right, 2 = Up, 3 = Down
-    public List<float> atkStates = new List<float>() { 0, 0, 0, 0 };
-    char queuedAtk = 'N';
-    // Start is called before the first frame update
+    public List<float> atkStates = new List<float>() { 0, 0, 0, 0 }; // Attack States: 0 = Left, 1 = Right, 2 = Up, 3 = Down
+    int i; // index for Max (current active attack)
+    int j; // index for Inputs
+    int queuedAtk; // used to check for attacks initiated while in delay
+    float moveSpeed;
+    float attackLength;
+    float impactDelay;
+    float counterThreshold;
+    int HP;
+
     void Start()
     {
         playerStatus = GameObject.Find("PlayerStatus").GetComponent<TextMeshProUGUI>();
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
-        HP = 99;
+        moveSpeed = gameManager.moveSpeed;
+        attackLength = gameManager.attackLength;
+        impactDelay = gameManager.impactDelay;
+        counterThreshold = gameManager.counterThreshold;
+        HP = 999;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        // check for user input (TODO: add touch swipe control support)
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            if (delayState == 0) { atkStates[0] = 1.0f; }
-            else
-            {
-                queuedAtk = 'L';
-            }
-        }
-        else if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            if (delayState == 0) { atkStates[1] = 1.0f; }
-            else
-            {
-                queuedAtk = 'R';
-            }
-        }
-        else if (Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            if (delayState == 0) { atkStates[2] = 1.0f; }
-            else
-            {
-                queuedAtk = 'U';
-            }
-        }
-        else if (Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            if (delayState == 0) { atkStates[3] = 1.0f; }
-            else
-            {
-                queuedAtk = 'D';
-            }
-        }
+        // set index of Max atkState
+        i = atkStates.IndexOf(atkStates.Max());
+
+        // check for user input
+        inputCheck();
+
         // update Delay and Attack States
         updateStates();
     }
 
     private void LateUpdate()
     {
-        playerStatus.text = "Delay: " + delayState + "\nLeft: " + atkStates[0] + "\nRight: " + atkStates[1];
+        playerStatus.text = "Delay: " + delayState + "\nLeft: " + atkStates[0] + "\nRight: " + atkStates[1] + "\nUp: " + atkStates[2] + "\nDown: " + atkStates[3];
     }
 
     private void OnTriggerEnter(Collider other)
@@ -73,6 +54,57 @@ public class PlayerController : MonoBehaviour
         {
             enemy = other.GetComponent<EnemyActions>();
             gameManager.EncounterStart();
+        }
+    }
+
+    void inputCheck()
+    {
+        // check for user input (TODO: add touch swipe control support)
+        if (Input.GetKeyDown(KeyCode.LeftArrow) && atkStates[0] == 0)
+        {
+            j = 0;
+        }
+        else if (Input.GetKeyDown(KeyCode.RightArrow) && atkStates[1] == 0)
+        {
+            j = 1;
+        }
+        else if (Input.GetKeyDown(KeyCode.UpArrow) && atkStates[2] == 0)
+        {
+            j = 2;
+        }
+        else if (Input.GetKeyDown(KeyCode.DownArrow) && atkStates[3] == 0)
+        {
+            j = 3;
+        }
+        else
+        {
+            return;
+        }
+
+        if (delayState == 0)
+        {
+            // on attack change (feint)
+            if (atkStates[i] != 0)
+            {
+                delayState = (attackLength - atkStates[i]) / 2;
+                atkStates[i] = 0;
+                queuedAtk = j;
+                return;
+            }
+
+            // on counter applicable
+            if (enemy.atkStates[j] > counterThreshold)
+            {
+                counter(0);
+                return;
+            }
+
+            // otherwise, initiate attack
+            atkStates[j] = attackLength;
+        }
+        else // if delay active, queue attack
+        {
+            queuedAtk = j;
         }
     }
 
@@ -85,41 +117,32 @@ public class PlayerController : MonoBehaviour
             if (delayState <= 0)
             {
                 delayState = 0;
-                switch (queuedAtk)
+                if (queuedAtk != -1)
                 {
-                    case 'L':
-                        atkStates[0] = 1.0f;
-                        queuedAtk = 'N';
-                        break;
-                    case 'R':
-                        atkStates[1] = 1.0f;
-                        queuedAtk = 'N';
-                        break;
-                    case 'U':
-                        atkStates[2] = 1.0f;
-                        queuedAtk = 'N';
-                        break;
-                    case 'D':
-                        atkStates[3] = 1.0f;
-                        queuedAtk = 'N';
-                        break;
+                    atkStates[queuedAtk] = attackLength;
+                    queuedAtk = -1;
                 }
             }
         }
 
+        i = atkStates.IndexOf(atkStates.Max());
         //update attack states
-        if (atkStates.Max() > 0)
+        if (atkStates[i] > 0)
         {
-            int i = atkStates.IndexOf(atkStates.Max());
             atkStates[i] -= Time.deltaTime / 10;
             if (gameManager.encounter)
             {
+                // on hit
                 if (atkStates[i] <= 0)
                 {
                     enemy.takeDamage();
                     atkStates[i] = 0;
+                    delayState = impactDelay;
+                    return;
                 }
-                else if (enemy.atkStates[i] != 0 && atkStates[i] + enemy.atkStates[i] > 0.9f && atkStates[i] + enemy.atkStates[i] < 1.0f)
+
+                // on clash
+                if (enemy.atkStates[i] != 0 && atkStates[i] + enemy.atkStates[i] > 0.9f && atkStates[i] + enemy.atkStates[i] < attackLength)
                 {
                     enemy.clash(i);
                     clash(i);
@@ -128,19 +151,34 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void clash(int i)
+    void clash(int x)
     {
         Debug.Log("Clash!");
-        delayState = atkStates[i];
-        atkStates[0] = atkStates[1] = atkStates[2] = atkStates[3] = 0;
+        delayState = impactDelay;
+        atkStates[x] = 0;
+    }
+
+    public void counter(int x)
+    {
+        Debug.Log("Player Counter!");
+        enemy.countered(x);
+        atkStates[x] = 0;
+    }
+
+    public void countered(int x)
+    {
+        Debug.Log("Enemy Counter!");
+        atkStates[x] = 0;
+        delayState = attackLength;
     }
 
     public void takeDamage()
     {
         HP--;
+        Debug.LogWarning("Player Damage!  HP = " + HP);
         if (HP <= 0)
         {
-            Debug.Log("Game Over!");
+            Debug.LogWarning("Game Over!");
             //Destroy(gameObject);
         }
     }

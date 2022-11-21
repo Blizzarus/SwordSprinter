@@ -9,19 +9,26 @@ public class EnemyActions : MonoBehaviour
     GameManager gameManager;
     TextMeshProUGUI enemyStatus;
     PlayerController player;
-    public int HP;
     public float delayState;
-    // Attack States: 0 = Left, 1 = Right, 2 = Up, 3 = Down
+    public List<float> atkStates = new List<float>() { 0, 0, 0, 0 }; // Attack States: 0 = Left, 1 = Right, 2 = Up, 3 = Down
     // NOTE: Enemy attack states are named from the PLAYER perspective (0 = attack to PLAYER's left)
-    public List<float> atkStates = new List<float>() { 0, 0, 0, 0 };
-    float speed;
-    // Start is called before the first frame update
+
+    int i; // index for Max (current active attack)
+    [SerializeField] int intelligence; // determines pattern complexity and recognition ability
+    [SerializeField] float AIDelay; // determines how long enemy takes to react and initiates new attacks
+    float moveSpeed;
+    float attackLength;
+    float impactDelay;
+    int HP;
+
     void Awake()
     {
         enemyStatus = GameObject.Find("EnemyStatus").GetComponent<TextMeshProUGUI>();
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
-        speed = gameManager.speed;
+        moveSpeed = gameManager.moveSpeed;
+        attackLength = gameManager.attackLength;
+        impactDelay = gameManager.impactDelay;
         HP = 3;
     }
 
@@ -30,25 +37,37 @@ public class EnemyActions : MonoBehaviour
     {
         if (!gameManager.encounter)
         {
-            transform.Translate(Vector3.forward * Time.deltaTime * speed);
+            transform.Translate(Vector3.forward * Time.deltaTime * moveSpeed);
         }
         else
         {
+            // set index of Max atkState
+            i = atkStates.IndexOf(atkStates.Max());
+
+            // choose action to perform
             combatActions();
+
+            // update Atk and Delay states
+            updateStates();
         }
     }
 
     private void LateUpdate()
     {
-        enemyStatus.text = "Stagger: " + delayState + "\nLeft: " + atkStates[0] + "\nRight: " + atkStates[1];
+        enemyStatus.text = "Delay: " + delayState + "\nLeft: " + atkStates[0] + "\nRight: " + atkStates[1] + "\nUp: " + atkStates[2] + "\nDown: " + atkStates[3];
     }
 
     void combatActions()
     {
-        if (delayState == 0 && atkStates.Max() == 0)
+        if (delayState == 0 && atkStates[i] == 0)
         {
-            atkStates[0] = 1.0f;
+            atkStates[0] = attackLength;
         }
+    }
+
+    void updateStates()
+    {
+        i = atkStates.IndexOf(atkStates.Max());
 
         // update delay state
         if (delayState > 0)
@@ -58,28 +77,40 @@ public class EnemyActions : MonoBehaviour
         }
 
         // update attack states
-        if (atkStates.Max() > 0)
+        if (atkStates[i] > 0)
         {
-            int i = atkStates.IndexOf(atkStates.Max());
             atkStates[i] -= Time.deltaTime / 10;
             if (atkStates[i] <= 0)
             {
                 player.takeDamage();
                 atkStates[i] = 0;
-                delayState = 0.2f;
+                delayState = impactDelay + AIDelay / 2;
             }
         }
     }
 
-    public void clash(int i)
+    public void clash(int x)
     {
-        delayState = atkStates[i];
-        atkStates[i] = 0;
+        delayState = impactDelay + AIDelay;
+        atkStates[x] = 0;
+    }
+
+    public void counter(int x)
+    {
+        player.countered(x);
+        atkStates[x] = 0;
+    }
+
+    public void countered(int x)
+    {
+        delayState = attackLength + AIDelay;
+        atkStates[x] = 0;
     }
 
     public void takeDamage()
     {
         HP--;
+        Debug.LogWarning("Enemy Damage!  HP = " + HP);
         if (HP <= 0)
         {
             gameManager.EncounterEnd();
@@ -87,7 +118,7 @@ public class EnemyActions : MonoBehaviour
         }
         else
         {
-            delayState = 5.0f;
+            delayState = impactDelay;
         }
     }
 }

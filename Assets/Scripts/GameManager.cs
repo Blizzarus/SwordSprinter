@@ -7,7 +7,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] Vector3 spawnPosition;
     public GameObject enemy;
     public bool encounter;
-    public float speed = 20.0f;
+    public float moveSpeed = 20.0f;
+    public float attackLength = 1.0f;
+    public float impactDelay = 0.25f;
+    public float counterThreshold = 0.9f;
     // Start is called before the first frame update
     void Start()
     {
