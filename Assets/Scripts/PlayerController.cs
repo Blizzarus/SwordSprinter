@@ -12,9 +12,7 @@ public class PlayerController : MonoBehaviour
     public float delayState = 0;
     public List<float> atkStates = new List<float>() { 0, 0, 0, 0 }; // Attack States: 0 = Left, 1 = Right, 2 = Up, 3 = Down
     int i; // index for Max (current active attack)
-    int j; // index for Inputs
-    int queuedAtk; // used to check for attacks initiated while in delay
-    float moveSpeed;
+    int queuedAtk = -1; // used to check for attacks initiated while in delay
     float attackLength;
     float impactDelay;
     float counterThreshold;
@@ -24,7 +22,6 @@ public class PlayerController : MonoBehaviour
     {
         playerStatus = GameObject.Find("PlayerStatus").GetComponent<TextMeshProUGUI>();
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
-        moveSpeed = gameManager.moveSpeed;
         attackLength = gameManager.attackLength;
         impactDelay = gameManager.impactDelay;
         counterThreshold = gameManager.counterThreshold;
@@ -59,6 +56,7 @@ public class PlayerController : MonoBehaviour
 
     void inputCheck()
     {
+        int j;
         // check for user input (TODO: add touch swipe control support)
         if (Input.GetKeyDown(KeyCode.LeftArrow) && atkStates[0] == 0)
         {
@@ -93,9 +91,9 @@ public class PlayerController : MonoBehaviour
             }
 
             // on counter applicable
-            if (enemy.atkStates[j] > counterThreshold)
+            if (gameManager.encounter && enemy.atkStates[j] > counterThreshold)
             {
-                counter(0);
+                enemy.countered(j);
                 return;
             }
 
@@ -113,7 +111,7 @@ public class PlayerController : MonoBehaviour
         //update delayState
         if (delayState > 0)
         {
-            delayState -= Time.deltaTime / 10;
+            delayState -= Time.deltaTime;
             if (delayState <= 0)
             {
                 delayState = 0;
@@ -129,7 +127,7 @@ public class PlayerController : MonoBehaviour
         //update attack states
         if (atkStates[i] > 0)
         {
-            atkStates[i] -= Time.deltaTime / 10;
+            atkStates[i] -= Time.deltaTime;
             if (gameManager.encounter)
             {
                 // on hit
@@ -144,31 +142,27 @@ public class PlayerController : MonoBehaviour
                 // on clash
                 if (enemy.atkStates[i] != 0 && atkStates[i] + enemy.atkStates[i] > 0.9f && atkStates[i] + enemy.atkStates[i] < attackLength)
                 {
-                    enemy.clash(i);
                     clash(i);
                 }
             }
+        }
+        else if (atkStates[i] < 0)
+        {
+            atkStates[i] = 0;
         }
     }
 
     void clash(int x)
     {
-        Debug.Log("Clash!");
+        enemy.clash(x);
         delayState = impactDelay;
-        atkStates[x] = 0;
-    }
-
-    public void counter(int x)
-    {
-        Debug.Log("Player Counter!");
-        enemy.countered(x);
         atkStates[x] = 0;
     }
 
     public void countered(int x)
     {
         Debug.Log("Enemy Counter!");
-        atkStates[x] = 0;
+        atkStates[x] = enemy.atkStates[x] = 0;
         delayState = attackLength;
     }
 
@@ -180,6 +174,11 @@ public class PlayerController : MonoBehaviour
         {
             Debug.LogWarning("Game Over!");
             //Destroy(gameObject);
+        }
+        else
+        {
+            atkStates[i] = 0;
+            delayState = impactDelay;
         }
     }
 }

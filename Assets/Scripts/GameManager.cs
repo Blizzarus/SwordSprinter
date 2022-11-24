@@ -7,13 +7,19 @@ public class GameManager : MonoBehaviour
     [SerializeField] Vector3 spawnPosition;
     public GameObject enemy;
     public bool encounter;
+
     public float moveSpeed = 20.0f;
     public float attackLength = 1.0f;
-    public float impactDelay = 0.25f;
+    public float impactDelay = 0.2f;
     public float counterThreshold = 0.9f;
-    // Start is called before the first frame update
+
+    public int enemyIntelligence = 1;
+    public float enemyDelay = 0.5f;
+
+    public int enemiesDefeated;
     void Start()
     {
+        //Time.timeScale = 0.75f;
         encounter = false;
         SpawnEnemy();
     }
@@ -37,6 +43,22 @@ public class GameManager : MonoBehaviour
     public void EncounterEnd()
     {
         encounter = false;
+        enemiesDefeated++;
+        enemyIntelligence = enemiesDefeated switch
+        {
+            <= 1 => 1,
+            > 1 and <= 4 => 2,
+            > 4 and <= 9 => 3,
+            > 9 and <= 20 => 4,
+            > 20 => 5
+        };
+        enemyDelay = enemiesDefeated switch
+        {
+            <= 4 => 0.5f,
+            > 4 and <= 9 => 0.4f,
+            > 9 and <= 20 => 0.3f,
+            > 20 => 0.2f
+        };
         SpawnEnemy();
     }
 }

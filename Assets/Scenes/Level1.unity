@@ -711,8 +711,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23a92be049652c44096d7fa50a2ead14, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnPosition: {x: 30, y: 0, z: 1}
-  enemy: {fileID: 6589218388449947872, guid: d3815c10a689eb849a3fc5e07ba94ea9, type: 3}
+  spawnPosition: {x: 35, y: 0, z: 0}
+  enemy: {fileID: 8175814187890381413, guid: d3815c10a689eb849a3fc5e07ba94ea9, type: 3}
   encounter: 0
   moveSpeed: 20
   attackLength: 1
@@ -1054,6 +1054,18 @@ PrefabInstance:
     - target: {fileID: 4303105975780224825, guid: 8766f2f9259e56f4f9e0613fde48e770, type: 3}
       propertyPath: m_Name
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 4303105975780224825, guid: 8766f2f9259e56f4f9e0613fde48e770, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 7357835528817881081, guid: 8766f2f9259e56f4f9e0613fde48e770, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7357835528817881081, guid: 8766f2f9259e56f4f9e0613fde48e770, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8766f2f9259e56f4f9e0613fde48e770, type: 3}
