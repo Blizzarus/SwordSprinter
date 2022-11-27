@@ -39,7 +39,7 @@ ModelImporter:
       name: leftAtkClip
       takeName: clip
       internalID: 0
-      firstFrame: 0
+      firstFrame: 38
       lastFrame: 324
       wrapMode: 0
       orientationOffsetY: 0

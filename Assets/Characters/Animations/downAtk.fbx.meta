@@ -39,7 +39,7 @@ ModelImporter:
       name: downAtkClip
       takeName: clip
       internalID: 0
-      firstFrame: 0
+      firstFrame: 39
       lastFrame: 333
       wrapMode: 0
       orientationOffsetY: 0

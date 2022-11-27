@@ -39,7 +39,7 @@ ModelImporter:
       name: stopClip1
       takeName: clip
       internalID: 0
-      firstFrame: 0
+      firstFrame: 75
       lastFrame: 260
       wrapMode: 0
       orientationOffsetY: 0
