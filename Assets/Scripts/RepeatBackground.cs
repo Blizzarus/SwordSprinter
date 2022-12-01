@@ -6,7 +6,7 @@ public class RepeatBackground : MonoBehaviour
 {
     Vector3 startPos;
     float speed;
-    float repeatWidth;
+    public float repeatWidth;
     GameManager gameManager; 
 
     // Start is called before the first frame update
@@ -14,7 +14,7 @@ public class RepeatBackground : MonoBehaviour
     {
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         startPos = transform.position;
-        repeatWidth = GameObject.FindGameObjectWithTag("Background").GetComponent<BoxCollider>().size.x * 2;
+        repeatWidth = GetComponent<BoxCollider>().size.x / 2;
         speed = gameManager.moveSpeed;
     }
 
