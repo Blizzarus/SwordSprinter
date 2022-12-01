@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ public class PlayerController : MonoBehaviour
     GameManager gameManager;
     TextMeshProUGUI playerStatus;
     EnemyActions enemy;
+    Animator animator;
     public float delayState = 0;
     public List<float> atkStates = new List<float>() { 0, 0, 0, 0 }; // Attack States: 0 = Left, 1 = Right, 2 = Up, 3 = Down
     int i; // index for Max (current active attack)
@@ -26,6 +28,8 @@ public class PlayerController : MonoBehaviour
         impactDelay = gameManager.impactDelay;
         counterThreshold = gameManager.counterThreshold;
         HP = 999;
+
+        setupAnimations();
     }
 
     void Update()
@@ -51,6 +55,7 @@ public class PlayerController : MonoBehaviour
         {
             enemy = other.GetComponent<EnemyActions>();
             gameManager.EncounterStart();
+            animator.SetTrigger("stopRun");
         }
     }
 
@@ -98,7 +103,7 @@ public class PlayerController : MonoBehaviour
             }
 
             // otherwise, initiate attack
-            atkStates[j] = attackLength;
+            attack(j);
         }
         else // if delay active, queue attack
         {
@@ -124,6 +129,7 @@ public class PlayerController : MonoBehaviour
         }
 
         i = atkStates.IndexOf(atkStates.Max());
+
         //update attack states
         if (atkStates[i] > 0)
         {
@@ -146,9 +152,35 @@ public class PlayerController : MonoBehaviour
                 }
             }
         }
-        else if (atkStates[i] < 0)
+
+        if (atkStates[i] < 0)
         {
             atkStates[i] = 0;
+        }
+    }
+
+    void attack(int x)
+    {
+        if (gameManager.encounter && enemy.CounterPlayer(x))
+        {
+            countered(x);
+            return;
+        }
+        atkStates[x] = attackLength;
+        switch (x)
+        {
+            case 0:
+                animator.SetTrigger("startLAtk");
+                break;
+            case 1:
+                animator.SetTrigger("startRAtk");
+                break;
+            case 2:
+                animator.SetTrigger("startUAtk");
+                break;
+            case 3:
+                animator.SetTrigger("startDAtk");
+                break;
         }
     }
 
@@ -156,13 +188,16 @@ public class PlayerController : MonoBehaviour
     {
         enemy.clash(x);
         delayState = impactDelay;
+        animator.SetFloat("clashTime", atkStates[x]);
         atkStates[x] = 0;
+        animator.SetTrigger("startClash");
     }
 
-    public void countered(int x)
+    void countered(int x)
     {
         Debug.Log("Enemy Counter!");
         atkStates[x] = enemy.atkStates[x] = 0;
+        animator.SetTrigger("startClash");
         delayState = attackLength;
     }
 
@@ -177,8 +212,48 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
+            animator.SetFloat("clashTime", atkStates[i]);
+            animator.SetTrigger("startClash");
             atkStates[i] = 0;
             delayState = impactDelay;
         }
+    }
+
+    void setupAnimations()
+    {
+        animator = GetComponent<Animator>();
+        AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+        foreach (AnimationClip clip in clips)
+        {
+            switch (clip.name)
+            {
+                case "leftAtkClip":
+                    animator.SetFloat("LAtkMulti", clip.length / attackLength);
+                    break;
+                case "rightAtkClip":
+                    animator.SetFloat("RAtkMulti", clip.length / attackLength);
+                    break;
+                case "upAtkClip":
+                    animator.SetFloat("UAtkMulti", clip.length / attackLength);
+                    break;
+                case "downAtkClip":
+                    animator.SetFloat("DAtkMulti", clip.length / attackLength);
+                    break;
+                case "leftClashClip":
+                    animator.SetFloat("LClashMulti", clip.length / impactDelay);
+                    break;
+                case "rightClashClip":
+                    animator.SetFloat("RClashMulti", clip.length / impactDelay);
+                    break;
+                case "upClashClip":
+                    animator.SetFloat("UClashMulti", clip.length / impactDelay);
+                    break;
+                case "downClashClip":
+                    animator.SetFloat("DClashMulti", clip.length / impactDelay);
+                    break;
+            }
+        }
+
+        //animator.SetTrigger("startRun");
     }
 }

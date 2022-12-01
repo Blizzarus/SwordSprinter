@@ -39,8 +39,8 @@ ModelImporter:
       name: DanceClip
       takeName: clip
       internalID: 0
-      firstFrame: 0
-      lastFrame: 932
+      firstFrame: 79
+      lastFrame: 853
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

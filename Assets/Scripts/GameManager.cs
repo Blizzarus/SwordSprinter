@@ -10,28 +10,24 @@ public class GameManager : MonoBehaviour
 
     public float moveSpeed = 20.0f;
     public float attackLength = 1.0f;
-    public float impactDelay = 0.2f;
+    public float impactDelay = 0.5f;
     public float counterThreshold = 0.9f;
 
     public int enemyIntelligence = 1;
     public float enemyDelay = 0.5f;
+    float spawnTime = 5.0f;
 
     public int enemiesDefeated;
     void Start()
     {
-        //Time.timeScale = 0.75f;
+        //Time.timeScale = 0.2f;
         encounter = false;
-        SpawnEnemy();
+        //SpawnEnemy();
     }
 
-    // Update is called once per frame
-    void Update()
+    IEnumerator SpawnEnemy()
     {
-
-    }
-
-    public void SpawnEnemy()
-    {
+        yield return new WaitForSeconds(spawnTime);
         Instantiate(enemy, spawnPosition, enemy.transform.rotation);
     }
 

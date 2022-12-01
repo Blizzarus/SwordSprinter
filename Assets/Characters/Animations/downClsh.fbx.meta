@@ -39,8 +39,8 @@ ModelImporter:
       name: downClashClip
       takeName: clip
       internalID: 0
-      firstFrame: 0
-      lastFrame: 351
+      firstFrame: 43
+      lastFrame: 143
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

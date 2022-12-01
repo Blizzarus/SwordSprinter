@@ -8,10 +8,16 @@ public class EnemyActions : MonoBehaviour
 {
     GameManager gameManager;
     TextMeshProUGUI enemyStatus;
+    Animator animator;
     PlayerController player;
+
     List<List<int>> attackPatterns; // list of lists of ints used to track enemy attack patterns
     int currentPattern; // list index to track current active attack pattern
     int nextAttack; // list inex to track next attack in pattern
+
+    List<int> playerAttackHistory; // list of all attacks the player has executed
+    List<int> recentAttacks; // list of the last few attacks the player has executed - length varies by enemy intelligence
+    int predictAttack; // value corresponding to the expected next attack
 
     public float delayState;
     public List<float> atkStates = new List<float>() { 0, 0, 0, 0 }; // Attack States: 0 = Left, 1 = Right, 2 = Up, 3 = Down
@@ -29,14 +35,18 @@ public class EnemyActions : MonoBehaviour
     void Awake()
     {
         enemyStatus = GameObject.Find("EnemyStatus").GetComponent<TextMeshProUGUI>();
+        animator = GetComponent<Animator>();
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+
         intelligence = gameManager.enemyIntelligence;
         AIDelay = gameManager.enemyDelay;
         moveSpeed = gameManager.moveSpeed;
         attackLength = gameManager.attackLength;
         impactDelay = gameManager.impactDelay;
         counterThreshold = gameManager.counterThreshold;
+
+
         attackPatterns = setAttackPatterns();
         string print;
         foreach(List<int> list in attackPatterns)
@@ -44,6 +54,10 @@ public class EnemyActions : MonoBehaviour
             print = string.Join(',', list);
             Debug.Log(print);
         }
+
+        playerAttackHistory = new List<int>();
+        predictAttack = -1;
+
         HP = 3;
     }
 
@@ -76,13 +90,20 @@ public class EnemyActions : MonoBehaviour
     {
         if (delayState == 0 && atkStates[i] == 0)
         {
+            int j = player.atkStates.IndexOf(player.atkStates.Max());
+            if (player.atkStates[j] > 0)
+            {
+                attack(j);
+                return;
+            }
+
             if (nextAttack == attackPatterns[currentPattern].Count())
             {
                 newPattern();
                 return;
             }
 
-            int j = attackPatterns[currentPattern][nextAttack];
+            j = attackPatterns[currentPattern][nextAttack];
             nextAttack++;
 
             // on counter applicable
@@ -93,7 +114,7 @@ public class EnemyActions : MonoBehaviour
             }
 
             // otherwise, initate attack
-            atkStates[j] = attackLength; 
+            attack(j);
         }
     }
 
@@ -101,7 +122,7 @@ public class EnemyActions : MonoBehaviour
     {
         currentPattern = Random.Range(0, attackPatterns.Count());
         nextAttack = 0;
-        delayState += AIDelay;
+        delayState = AIDelay;
     }
 
     void updateStates()
@@ -128,16 +149,50 @@ public class EnemyActions : MonoBehaviour
         }
     }
 
+    void attack(int x)
+    {
+        atkStates[x] = attackLength;
+        switch (x)
+        {
+            case 0:
+                animator.SetTrigger("startLAtk");
+                break;
+            case 1:
+                animator.SetTrigger("startRAtk");
+                break;
+            case 2:
+                animator.SetTrigger("startUAtk");
+                break;
+            case 3:
+                animator.SetTrigger("startDAtk");
+                break;
+        }
+    }
+
+    public bool CounterPlayer(int x)
+    {
+        playerAttackHistory.Add(x);
+        predictAttack = Random.Range(0, 4);
+        if(x == predictAttack && (atkStates[i] > counterThreshold || atkStates[i] == 0))
+        {
+            predictAttack = -1;
+            return true;
+        }
+        return false;
+    }
+
     public void clash(int x)
     {
         delayState = impactDelay;
         atkStates[x] = 0;
+        animator.SetTrigger("startClash");
     }
 
     public void countered(int x)
     {
-        delayState = attackLength;
         newPattern();
+        delayState += attackLength;
+        animator.SetTrigger("startClash");
         player.atkStates[x] = atkStates[x] = 0;
     }
 
@@ -152,8 +207,9 @@ public class EnemyActions : MonoBehaviour
         }
         else
         {
+            animator.SetTrigger("startClash");
             atkStates[i] = 0;
-            delayState = impactDelay;
+            newPattern();
         }
     }
 
