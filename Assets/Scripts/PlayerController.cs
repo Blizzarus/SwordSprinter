@@ -204,7 +204,7 @@ public class PlayerController : MonoBehaviour
     public void takeDamage()
     {
         HP--;
-        Debug.LogWarning("Player Damage!  HP = " + HP);
+        //Debug.LogWarning("Player Damage!  HP = " + HP);
         if (HP <= 0)
         {
             Debug.LogWarning("Game Over!");

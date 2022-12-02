@@ -16,7 +16,7 @@ public class EnemyActions : MonoBehaviour
     int nextAttack; // list inex to track next attack in pattern
 
     List<int> playerAttackHistory; // list of all attacks the player has executed
-    List<int> recentAttacks; // list of the last few attacks the player has executed - length varies by enemy intelligence
+    List<List<int>> predictionPatterns; // list of patterns recorded; length varies by enemy intelligence
     int predictAttack; // value corresponding to the expected next attack
 
     public float delayState;
@@ -56,6 +56,7 @@ public class EnemyActions : MonoBehaviour
         }
 
         playerAttackHistory = new List<int>();
+        predictionPatterns = new List<List<int>>();
         predictAttack = -1;
 
         HP = 3;
@@ -171,14 +172,54 @@ public class EnemyActions : MonoBehaviour
 
     public bool CounterPlayer(int x)
     {
-        playerAttackHistory.Add(x);
-        predictAttack = Random.Range(0, 4);
-        if(x == predictAttack && (atkStates[i] > counterThreshold || atkStates[i] == 0))
+        addPlayerPatterns(x);
+        foreach (List<int> pattern in predictionPatterns)
+        {
+            predictAttack = Search(playerAttackHistory, pattern);
+            if (predictAttack != -1) { break; }
+        }
+        Debug.Log("Predicted " + predictAttack);
+        if (x == predictAttack && (atkStates[i] > counterThreshold || atkStates[i] == 0))
         {
             predictAttack = -1;
             return true;
         }
         return false;
+    }
+
+    void addPlayerPatterns(int x)
+    {
+        playerAttackHistory.Add(x);
+        int i = 4 - (intelligence);
+        int j = playerAttackHistory.Count();
+        int d = j % i;
+        if (d == 0)
+        {
+            List<int> pattern = new List<int>();
+            for (int k = i; k >= 1; k--)
+            {
+                pattern.Add(playerAttackHistory[j - k]);
+            }
+            predictionPatterns.Add(pattern);
+        }
+    }
+
+    int Search(List<int> src, List<int> pattern)
+    {
+        int maxFirstCharSlot = src.Count() - pattern.Count() + 1;
+        for (int i = 0; i < maxFirstCharSlot; i++)
+        {
+            if (src[i] != pattern[0]) // compare first value
+                continue;
+
+            // found a match on first value, now try to match rest of the pattern
+            for (int j = pattern.Count() - 1; j >= 1; j--)
+            {
+                if (src[i + j] != pattern[j]) break;
+                if (j == 1) return i;
+            }
+        }
+        return -1;
     }
 
     public void clash(int x)

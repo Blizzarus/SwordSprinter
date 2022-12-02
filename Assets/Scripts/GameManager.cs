@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
     public GameObject enemy;
     public bool encounter;
 
-    public float moveSpeed = 10.0f;
+    public float moveSpeed = 8.0f;
     public float attackLength = 1.0f;
     public float impactDelay = 0.5f;
     public float counterThreshold = 0.9f;
@@ -22,7 +22,7 @@ public class GameManager : MonoBehaviour
     {
         //Time.timeScale = 0.2f;
         encounter = false;
-        //SpawnEnemy();
+        StartCoroutine("SpawnEnemy");
     }
 
     IEnumerator SpawnEnemy()
@@ -55,6 +55,6 @@ public class GameManager : MonoBehaviour
             > 9 and <= 20 => 0.3f,
             > 20 => 0.2f
         };
-        SpawnEnemy();
+        StartCoroutine("SpawnEnemy");
     }
 }
