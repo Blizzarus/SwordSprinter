@@ -8,7 +8,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     GameManager gameManager;
-    TextMeshProUGUI playerStatus;
+    //TextMeshProUGUI playerStatus;
     EnemyActions enemy;
     Animator animator;
     public float delayState = 0;
@@ -22,7 +22,7 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        playerStatus = GameObject.Find("PlayerStatus").GetComponent<TextMeshProUGUI>();
+        //playerStatus = GameObject.Find("PlayerStatus").GetComponent<TextMeshProUGUI>();
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         attackLength = gameManager.attackLength;
         impactDelay = gameManager.impactDelay;
@@ -38,7 +38,7 @@ public class PlayerController : MonoBehaviour
         i = atkStates.IndexOf(atkStates.Max());
 
         // check for user input
-        inputCheck();
+        if (gameManager.encounter) { inputCheck(); }
 
         // update Delay and Attack States
         updateStates();
@@ -46,7 +46,7 @@ public class PlayerController : MonoBehaviour
 
     private void LateUpdate()
     {
-        playerStatus.text = "Delay: " + delayState + "\nLeft: " + atkStates[0] + "\nRight: " + atkStates[1] + "\nUp: " + atkStates[2] + "\nDown: " + atkStates[3];
+        //playerStatus.text = "Delay: " + delayState + "\nLeft: " + atkStates[0] + "\nRight: " + atkStates[1] + "\nUp: " + atkStates[2] + "\nDown: " + atkStates[3];
     }
 
     private void OnTriggerEnter(Collider other)
@@ -96,7 +96,7 @@ public class PlayerController : MonoBehaviour
             }
 
             // on counter applicable
-            if (gameManager.encounter && enemy.atkStates[j] > counterThreshold)
+            if (enemy.atkStates[j] > counterThreshold)
             {
                 enemy.countered(j);
                 return;
@@ -188,9 +188,22 @@ public class PlayerController : MonoBehaviour
     {
         enemy.clash(x);
         delayState = impactDelay;
-        animator.SetFloat("clashTime", atkStates[x]);
+        switch(x)
+        {
+            case 0:
+                animator.Play("Left_Clash", 0, atkStates[x] / 2);
+                break;
+            case 1:
+                animator.Play("Right_Clash", 0, atkStates[x] / 2);
+                break;
+            case 2:
+                animator.Play("Up_Clash", 0, atkStates[x] / 2);
+                break;
+            case 3:
+                animator.Play("Down_Clash", 0, atkStates[x] / 2);
+                break;
+        }
         atkStates[x] = 0;
-        animator.SetTrigger("startClash");
     }
 
     void countered(int x)
@@ -208,15 +221,19 @@ public class PlayerController : MonoBehaviour
         if (HP <= 0)
         {
             Debug.LogWarning("Game Over!");
-            //Destroy(gameObject);
+            animator.Play("Die", 1);
         }
         else
         {
-            animator.SetFloat("clashTime", atkStates[i]);
-            animator.SetTrigger("startClash");
+            animator.Play("Hit", 1);
             atkStates[i] = 0;
             delayState = impactDelay;
         }
+    }
+
+    public void startRunning()
+    {
+        animator.Play("Run", 0);
     }
 
     void setupAnimations()
@@ -254,6 +271,6 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        //animator.SetTrigger("startRun");
+        animator.SetTrigger("startRun");
     }
 }

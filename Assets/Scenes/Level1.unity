@@ -2722,6 +2722,14 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4947292558085005193, guid: 46bf1d3feab8b734798def80d80b8346, type: 3}
+      propertyPath: m_Size.z
+      value: 1.476085
+      objectReference: {fileID: 0}
+    - target: {fileID: 4947292558085005193, guid: 46bf1d3feab8b734798def80d80b8346, type: 3}
+      propertyPath: m_Center.z
+      value: 1.1545529
+      objectReference: {fileID: 0}
     - target: {fileID: 4976962618823276673, guid: 46bf1d3feab8b734798def80d80b8346, type: 3}
       propertyPath: m_Name
       value: Player

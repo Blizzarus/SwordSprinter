@@ -27,7 +27,7 @@ public class EnemyActions : MonoBehaviour
     int intelligence; // determines pattern complexity and recognition ability
     float AIDelay; // determines how long enemy takes to react and initiate new attacks
     float moveSpeed;
-    float attackLength;
+    public float attackLength;
     float impactDelay;
     float counterThreshold;
     int HP;
@@ -48,12 +48,7 @@ public class EnemyActions : MonoBehaviour
 
 
         attackPatterns = setAttackPatterns();
-        string print;
-        foreach(List<int> list in attackPatterns)
-        {
-            print = string.Join(',', list);
-            Debug.Log(print);
-        }
+        setupAnimations();
 
         playerAttackHistory = new List<int>();
         predictionPatterns = new List<List<int>>();
@@ -225,15 +220,29 @@ public class EnemyActions : MonoBehaviour
     public void clash(int x)
     {
         delayState = impactDelay;
+        switch (x)
+        {
+            case 0:
+                animator.Play("Left_Clash", 0, atkStates[x] / 2);
+                break;
+            case 1:
+                animator.Play("Right_Clash", 0, atkStates[x] / 2);
+                break;
+            case 2:
+                animator.Play("Up_Clash", 0, atkStates[x] / 2);
+                break;
+            case 3:
+                animator.Play("Down_Clash", 0, atkStates[x] / 2);
+                break;
+        }
         atkStates[x] = 0;
-        animator.SetTrigger("startClash");
     }
 
     public void countered(int x)
     {
         newPattern();
         delayState += attackLength;
-        animator.SetTrigger("startClash");
+        animator.Play("Up_Clash", 0);
         player.atkStates[x] = atkStates[x] = 0;
     }
 
@@ -244,14 +253,22 @@ public class EnemyActions : MonoBehaviour
         if (HP <= 0)
         {
             gameManager.EncounterEnd();
-            Destroy(gameObject);
+            player.startRunning();
+            animator.Play("Die", 1);
+            StartCoroutine("deleteDeadBody");
         }
         else
         {
-            animator.SetTrigger("startClash");
+            animator.Play("Hit", 1);
             atkStates[i] = 0;
             newPattern();
         }
+    }
+
+    IEnumerator deleteDeadBody()
+    {
+        yield return new WaitForSeconds(2.0f);
+        Destroy(gameObject);
     }
 
     List<List<int>> setAttackPatterns()
@@ -269,5 +286,41 @@ public class EnemyActions : MonoBehaviour
         nextAttack = 0;
         currentPattern = Random.Range(0, attackPatterns.Count());
         return attackPatterns;
+    }
+
+    void setupAnimations()
+    {
+        animator = GetComponent<Animator>();
+        AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+        foreach (AnimationClip clip in clips)
+        {
+            switch (clip.name)
+            {
+                case "leftAtkClip":
+                    animator.SetFloat("LAtkMulti", clip.length / attackLength);
+                    break;
+                case "rightAtkClip":
+                    animator.SetFloat("RAtkMulti", clip.length / attackLength);
+                    break;
+                case "upAtkClip":
+                    animator.SetFloat("UAtkMulti", clip.length / attackLength);
+                    break;
+                case "downAtkClip":
+                    animator.SetFloat("DAtkMulti", clip.length / attackLength);
+                    break;
+                case "leftClashClip":
+                    animator.SetFloat("LClashMulti", clip.length / impactDelay);
+                    break;
+                case "rightClashClip":
+                    animator.SetFloat("RClashMulti", clip.length / impactDelay);
+                    break;
+                case "upClashClip":
+                    animator.SetFloat("UClashMulti", clip.length / impactDelay);
+                    break;
+                case "downClashClip":
+                    animator.SetFloat("DClashMulti", clip.length / impactDelay);
+                    break;
+            }
+        }
     }
 }

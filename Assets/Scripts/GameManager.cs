@@ -8,18 +8,28 @@ public class GameManager : MonoBehaviour
     public GameObject enemy;
     public bool encounter;
 
-    public float moveSpeed = 8.0f;
-    public float attackLength = 1.0f;
-    public float impactDelay = 0.5f;
-    public float counterThreshold = 0.9f;
+    public float moveSpeed;
+    public float attackLength;
+    public float impactDelay;
+    public float counterThreshold;
 
-    public int enemyIntelligence = 1;
-    public float enemyDelay = 0.5f;
-    float spawnTime = 5.0f;
+    public int enemyIntelligence;
+    public float enemyDelay;
+    float spawnTime;
 
     public int enemiesDefeated;
-    void Start()
+    void Awake()
     {
+        moveSpeed = 10.0f;
+        attackLength = 2.0f;
+        impactDelay = 1;
+        counterThreshold = 1.5f;
+
+        enemyIntelligence = 1;
+        enemyDelay = 1;
+
+        spawnTime = 3.0f;
+
         //Time.timeScale = 0.2f;
         encounter = false;
         StartCoroutine("SpawnEnemy");
@@ -50,10 +60,11 @@ public class GameManager : MonoBehaviour
         };
         enemyDelay = enemiesDefeated switch
         {
-            <= 4 => 0.5f,
-            > 4 and <= 9 => 0.4f,
-            > 9 and <= 20 => 0.3f,
-            > 20 => 0.2f
+            <= 1 => 1,
+            > 1 and <= 4 => 0.9f,
+            > 4 and <= 9 => 0.8f,
+            > 9 and <= 20 => 0.7f,
+            > 20 => 0.6f
         };
         StartCoroutine("SpawnEnemy");
     }
