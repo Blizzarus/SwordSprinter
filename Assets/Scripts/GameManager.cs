@@ -1,12 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     [SerializeField] Vector3 spawnPosition;
     public GameObject enemy;
     public bool encounter;
+    PlayerController player;
+    public GameObject startMenu;
+    public GameObject endMenu;
+    public TextMeshProUGUI endTitle;
+    public Button playButton;
+    public Button restartButton;
+    public Button exitButton;
 
     public float moveSpeed;
     public float attackLength;
@@ -20,19 +31,22 @@ public class GameManager : MonoBehaviour
     public int enemiesDefeated;
     void Awake()
     {
+        player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+
+        playButton.onClick.AddListener(Play);
+        restartButton.onClick.AddListener(Restart);
+        exitButton.onClick.AddListener(Exit);
+
         moveSpeed = 10.0f;
-        attackLength = 2.0f;
-        impactDelay = 1;
-        counterThreshold = 1.5f;
+        attackLength = 1.0f;
+        impactDelay = 1.0f;
+        counterThreshold = 0.75f;
 
         enemyIntelligence = 1;
         enemyDelay = 1;
 
         spawnTime = 3.0f;
-
-        //Time.timeScale = 0.2f;
-        encounter = false;
-        StartCoroutine("SpawnEnemy");
+        encounter = true;
     }
 
     IEnumerator SpawnEnemy()
@@ -50,6 +64,11 @@ public class GameManager : MonoBehaviour
     {
         encounter = false;
         enemiesDefeated++;
+        if(enemiesDefeated >= 5)
+        {
+            player.endDance();
+            return;
+        }
         enemyIntelligence = enemiesDefeated switch
         {
             <= 1 => 1,
@@ -67,5 +86,37 @@ public class GameManager : MonoBehaviour
             > 20 => 0.6f
         };
         StartCoroutine("SpawnEnemy");
+    }
+
+    void Play()
+    {
+        startMenu.SetActive(false);
+        player.startRunning();
+        encounter = false;
+        StartCoroutine("SpawnEnemy");
+    }
+
+    void Restart()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    void Exit()
+    {
+        Application.Quit();
+    }
+
+    public void Lose()
+    {
+        endTitle.color = Color.red;
+        endTitle.text = "Game Over!";
+        endMenu.SetActive(true);
+    }
+
+    public void Win()
+    {
+        endTitle.color = Color.white;
+        endTitle.text = "You Win!";
+        endMenu.SetActive(true);
     }
 }

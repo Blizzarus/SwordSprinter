@@ -54,7 +54,7 @@ public class EnemyActions : MonoBehaviour
         predictionPatterns = new List<List<int>>();
         predictAttack = -1;
 
-        HP = 3;
+        HP = 1;
     }
 
     // Update is called once per frame
@@ -140,7 +140,7 @@ public class EnemyActions : MonoBehaviour
             {
                 player.takeDamage();
                 atkStates[i] = 0;
-                delayState = impactDelay;
+                newPattern();
             }
         }
     }
@@ -223,16 +223,16 @@ public class EnemyActions : MonoBehaviour
         switch (x)
         {
             case 0:
-                animator.Play("Left_Clash", 0, atkStates[x] / 2);
+                animator.Play("Left_Clash", 0);
                 break;
             case 1:
-                animator.Play("Right_Clash", 0, atkStates[x] / 2);
+                animator.Play("Right_Clash", 0);
                 break;
             case 2:
-                animator.Play("Up_Clash", 0, atkStates[x] / 2);
+                animator.Play("Up_Clash", 0);
                 break;
             case 3:
-                animator.Play("Down_Clash", 0, atkStates[x] / 2);
+                animator.Play("Down_Clash", 0);
                 break;
         }
         atkStates[x] = 0;
@@ -255,7 +255,7 @@ public class EnemyActions : MonoBehaviour
             gameManager.EncounterEnd();
             player.startRunning();
             animator.Play("Die", 1);
-            StartCoroutine("deleteDeadBody");
+            StartCoroutine(DeleteDeadBody());
         }
         else
         {
@@ -265,10 +265,15 @@ public class EnemyActions : MonoBehaviour
         }
     }
 
-    IEnumerator deleteDeadBody()
+    IEnumerator DeleteDeadBody()
     {
         yield return new WaitForSeconds(2.0f);
         Destroy(gameObject);
+    }
+
+    public void Cease()
+    {
+        gameObject.GetComponent<EnemyActions>().enabled = false;
     }
 
     List<List<int>> setAttackPatterns()
@@ -319,6 +324,9 @@ public class EnemyActions : MonoBehaviour
                     break;
                 case "downClashClip":
                     animator.SetFloat("DClashMulti", clip.length / impactDelay);
+                    break;
+                case "hitClip":
+                    animator.SetFloat("hitMulti", clip.length / impactDelay);
                     break;
             }
         }
