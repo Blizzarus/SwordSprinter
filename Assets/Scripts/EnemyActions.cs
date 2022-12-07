@@ -17,7 +17,7 @@ public class EnemyActions : MonoBehaviour
 
     List<int> playerAttackHistory; // list of all attacks the player has executed
     List<List<int>> predictionPatterns; // list of patterns recorded; length varies by enemy intelligence
-    int predictAttack; // value corresponding to the expected next attack
+    int predictionLength; // value corresponding to the expected next attack
 
     public float delayState;
     public List<float> atkStates = new List<float>() { 0, 0, 0, 0 }; // Attack States: 0 = Left, 1 = Right, 2 = Up, 3 = Down
@@ -47,12 +47,11 @@ public class EnemyActions : MonoBehaviour
         counterThreshold = gameManager.counterThreshold;
 
 
-        attackPatterns = setAttackPatterns();
-        setupAnimations();
+        attackPatterns = SetAttackPatterns();
+        SetupAnimations();
 
         playerAttackHistory = new List<int>();
         predictionPatterns = new List<List<int>>();
-        predictAttack = -1;
 
         HP = 1;
     }
@@ -70,10 +69,10 @@ public class EnemyActions : MonoBehaviour
             i = atkStates.IndexOf(atkStates.Max());
 
             // choose action to perform
-            combatActions();
+            CombatActions();
 
             // update Atk and Delay states
-            updateStates();
+            UpdateStates();
         }
     }
 
@@ -82,20 +81,20 @@ public class EnemyActions : MonoBehaviour
         enemyStatus.text = "Delay: " + delayState + "\nLeft: " + atkStates[0] + "\nRight: " + atkStates[1] + "\nUp: " + atkStates[2] + "\nDown: " + atkStates[3];
     }
 
-    void combatActions()
+    void CombatActions()
     {
         if (delayState == 0 && atkStates[i] == 0)
         {
             int j = player.atkStates.IndexOf(player.atkStates.Max());
-            if (player.atkStates[j] > 0)
+            if (player.atkStates[j] > AIDelay / 2)
             {
-                attack(j);
+                Attack(j);
                 return;
             }
 
             if (nextAttack == attackPatterns[currentPattern].Count())
             {
-                newPattern();
+                NewPattern();
                 return;
             }
 
@@ -105,23 +104,23 @@ public class EnemyActions : MonoBehaviour
             // on counter applicable
             if (player.atkStates[j] > counterThreshold)
             {
-                countered(j);
+                Countered(j);
                 return;
             }
 
             // otherwise, initate attack
-            attack(j);
+            Attack(j);
         }
     }
 
-    void newPattern()
+    void NewPattern()
     {
         currentPattern = Random.Range(0, attackPatterns.Count());
         nextAttack = 0;
         delayState = AIDelay;
     }
 
-    void updateStates()
+    void UpdateStates()
     {
         i = atkStates.IndexOf(atkStates.Max());
 
@@ -136,88 +135,79 @@ public class EnemyActions : MonoBehaviour
         if (atkStates[i] > 0)
         {
             atkStates[i] -= Time.deltaTime;
-            if (atkStates[i] <= 0)
+            if (atkStates[i] <= 0 && HP > 0)
             {
-                player.takeDamage();
+                player.TakeDamage();
                 atkStates[i] = 0;
-                newPattern();
+                NewPattern();
             }
         }
     }
 
-    void attack(int x)
+    void Attack(int x)
     {
         atkStates[x] = attackLength;
         switch (x)
         {
             case 0:
-                animator.SetTrigger("startLAtk");
+                animator.Play("Left_Attack", 0);
                 break;
             case 1:
-                animator.SetTrigger("startRAtk");
+                animator.Play("Right_Attack", 0);
                 break;
             case 2:
-                animator.SetTrigger("startUAtk");
+                animator.Play("Up_Attack", 0);
                 break;
             case 3:
-                animator.SetTrigger("startDAtk");
+                animator.Play("Down_Attack", 0);
                 break;
         }
     }
 
     public bool CounterPlayer(int x)
     {
-        addPlayerPatterns(x);
-        foreach (List<int> pattern in predictionPatterns)
+        if (predictionPatterns.Count > 0 && (atkStates[i] > counterThreshold || atkStates[i] == 0))
         {
-            predictAttack = Search(playerAttackHistory, pattern);
-            if (predictAttack != -1) { break; }
+            List<int> recentAttacks = new List<int>(playerAttackHistory);
+            recentAttacks.Reverse();
+            foreach (List<int> pattern in predictionPatterns)
+            {
+                if (pattern[predictionLength-1] == x)
+                {
+                    for (int j = 0; j <= predictionLength - 2; j++)
+                    {
+                        if (pattern[j] != recentAttacks[j]) { break; }
+                        if (j == predictionLength - 2)
+                        {
+                            AddPlayerPatterns(x);
+                            Debug.Log("Countered!");
+                            return true;
+                        }
+                    }
+                }
+            }
         }
-        Debug.Log("Predicted " + predictAttack);
-        if (x == predictAttack && (atkStates[i] > counterThreshold || atkStates[i] == 0))
-        {
-            predictAttack = -1;
-            return true;
-        }
+        AddPlayerPatterns(x);
         return false;
     }
 
-    void addPlayerPatterns(int x)
+    void AddPlayerPatterns(int x)
     {
         playerAttackHistory.Add(x);
-        int i = 4 - (intelligence);
         int j = playerAttackHistory.Count();
-        int d = j % i;
-        if (d == 0)
+        if ((j % predictionLength) == 0)
         {
             List<int> pattern = new List<int>();
-            for (int k = i; k >= 1; k--)
+            for (int k = predictionLength; k >= 1; k--)
             {
                 pattern.Add(playerAttackHistory[j - k]);
             }
             predictionPatterns.Add(pattern);
+            Debug.Log("Player Pattern Recorded: " + string.Join(',', pattern));
         }
     }
 
-    int Search(List<int> src, List<int> pattern)
-    {
-        int maxFirstCharSlot = src.Count() - pattern.Count() + 1;
-        for (int i = 0; i < maxFirstCharSlot; i++)
-        {
-            if (src[i] != pattern[0]) // compare first value
-                continue;
-
-            // found a match on first value, now try to match rest of the pattern
-            for (int j = pattern.Count() - 1; j >= 1; j--)
-            {
-                if (src[i + j] != pattern[j]) break;
-                if (j == 1) return i;
-            }
-        }
-        return -1;
-    }
-
-    public void clash(int x)
+    public void Clash(int x)
     {
         delayState = impactDelay;
         switch (x)
@@ -238,30 +228,32 @@ public class EnemyActions : MonoBehaviour
         atkStates[x] = 0;
     }
 
-    public void countered(int x)
+    public void Countered(int x)
     {
-        newPattern();
+        NewPattern();
         delayState += attackLength;
         animator.Play("Up_Clash", 0);
         player.atkStates[x] = atkStates[x] = 0;
     }
 
-    public void takeDamage()
+    public void TakeDamage()
     {
         HP--;
-        Debug.LogWarning("Enemy Damage!  HP = " + HP);
         if (HP <= 0)
         {
+            atkStates[i] = -1;
             gameManager.EncounterEnd();
-            player.startRunning();
+            player.StartRunning();
             animator.Play("Die", 1);
+            gameManager.dieSFX();
             StartCoroutine(DeleteDeadBody());
         }
         else
         {
             animator.Play("Hit", 1);
+            gameManager.hurtSFX();
             atkStates[i] = 0;
-            newPattern();
+            NewPattern();
         }
     }
 
@@ -276,7 +268,7 @@ public class EnemyActions : MonoBehaviour
         gameObject.GetComponent<EnemyActions>().enabled = false;
     }
 
-    List<List<int>> setAttackPatterns()
+    List<List<int>> SetAttackPatterns()
     {
         List<List<int>> attackPatterns = new List<List<int>>();
         for(int x = 0; x < Random.Range(1, 1 + intelligence / 3) + intelligence / 3; x++)
@@ -290,10 +282,12 @@ public class EnemyActions : MonoBehaviour
         }
         nextAttack = 0;
         currentPattern = Random.Range(0, attackPatterns.Count());
+        predictionLength = 7 - intelligence;
+        if (predictionLength < 2) { predictionLength = 2; }
         return attackPatterns;
     }
 
-    void setupAnimations()
+    void SetupAnimations()
     {
         animator = GetComponent<Animator>();
         AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
