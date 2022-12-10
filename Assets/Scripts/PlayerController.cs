@@ -9,8 +9,11 @@ public class PlayerController : MonoBehaviour
 {
     GameManager gameManager;
     [SerializeField] TextMeshProUGUI playerStatus;
+    [SerializeField] TextMeshProUGUI counteredText;
+    TextFade counterFade;
     [SerializeField] GameObject clash;
     ParticleSystem clashFX;
+    [SerializeField] ParticleSystem[] bloodFX;
     EnemyActions enemy;
     Animator animator;
     public float delayState = 0;
@@ -26,11 +29,12 @@ public class PlayerController : MonoBehaviour
     {
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         clashFX = clash.GetComponent<ParticleSystem>();
+        counterFade = counteredText.GetComponent<TextFade>();
 
         attackLength = gameManager.attackLength;
         impactDelay = gameManager.impactDelay;
         counterThreshold = gameManager.counterThreshold;
-        HP = 999;
+        HP = 10;
         playerStatus.text = "HP Remaining: " + HP;
 
         SetupAnimations();
@@ -65,6 +69,7 @@ public class PlayerController : MonoBehaviour
 
     void inputCheck()
     {
+        if(HP <= 0 && !gameManager.cheatMode) { return; }
         int j;
         // check for user input (TODO: add touch swipe control support)
         if (Input.GetKeyDown(KeyCode.LeftArrow) && atkStates[0] == 0)
@@ -82,6 +87,11 @@ public class PlayerController : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.DownArrow) && atkStates[3] == 0)
         {
             j = 3;
+        }
+        else if (gameManager.cheatMode && Input.GetKeyDown(KeyCode.C))
+        {
+            enemy.Countered(enemy.atkStates.IndexOf(enemy.atkStates.Max()));
+            return;
         }
         else
         {
@@ -103,7 +113,6 @@ public class PlayerController : MonoBehaviour
             if (enemy.atkStates[j] > counterThreshold)
             {
                 enemy.Countered(j);
-                return;
             }
 
             // otherwise, initiate attack
@@ -142,7 +151,7 @@ public class PlayerController : MonoBehaviour
                 // on hit
                 if (atkStates[i] <= 0)
                 {
-                    enemy.TakeDamage();
+                    enemy.TakeDamage(i);
                     atkStates[i] = 0;
                     delayState = impactDelay;
                     return;
@@ -214,7 +223,7 @@ public class PlayerController : MonoBehaviour
 
     void Countered(int x)
     {
-        atkStates[x] = enemy.atkStates[x] = 0;
+        atkStates[x] = 0;
         switch (x)
         {
             case 0:
@@ -231,13 +240,16 @@ public class PlayerController : MonoBehaviour
                 break;
         }
         delayState = attackLength;
+        gameManager.clashSFX();
+        counterFade.StartFade();
     }
 
-    public void TakeDamage()
+    public void TakeDamage(int x)
     {
         HP--;
         queuedAtk = -1;
-        if (HP <= 0)
+        bloodFX[x].Play();
+        if (HP <= 0 && !gameManager.cheatMode)
         {
             atkStates[i] = -1;
             playerStatus.text = ":(";

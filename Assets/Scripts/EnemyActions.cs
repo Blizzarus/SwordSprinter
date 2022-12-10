@@ -7,8 +7,10 @@ using UnityEngine;
 public class EnemyActions : MonoBehaviour
 {
     GameManager gameManager;
+    TextFade counterFade;
     TextMeshProUGUI enemyStatus;
     Animator animator;
+    [SerializeField] ParticleSystem[] bloodFX;
     PlayerController player;
 
     List<List<int>> attackPatterns; // list of lists of ints used to track enemy attack patterns
@@ -18,6 +20,7 @@ public class EnemyActions : MonoBehaviour
     List<int> playerAttackHistory; // list of all attacks the player has executed
     List<List<int>> predictionPatterns; // list of patterns recorded; length varies by enemy intelligence
     int predictionLength; // value corresponding to the expected next attack
+    int counterMetric; // the number of times a pattern must be matched in order for the enemy to counter it
 
     public float delayState;
     public List<float> atkStates = new List<float>() { 0, 0, 0, 0 }; // Attack States: 0 = Left, 1 = Right, 2 = Up, 3 = Down
@@ -34,6 +37,7 @@ public class EnemyActions : MonoBehaviour
 
     void Awake()
     {
+        counterFade = GameObject.Find("CounterPrompt").GetComponent<TextFade>();
         enemyStatus = GameObject.Find("EnemyStatus").GetComponent<TextMeshProUGUI>();
         animator = GetComponent<Animator>();
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
@@ -117,7 +121,7 @@ public class EnemyActions : MonoBehaviour
     {
         currentPattern = Random.Range(0, attackPatterns.Count());
         nextAttack = 0;
-        delayState = AIDelay;
+        delayState += AIDelay;
     }
 
     void UpdateStates()
@@ -137,7 +141,7 @@ public class EnemyActions : MonoBehaviour
             atkStates[i] -= Time.deltaTime;
             if (atkStates[i] <= 0 && HP > 0)
             {
-                player.TakeDamage();
+                player.TakeDamage(i);
                 atkStates[i] = 0;
                 NewPattern();
             }
@@ -166,45 +170,51 @@ public class EnemyActions : MonoBehaviour
 
     public bool CounterPlayer(int x)
     {
-        if (predictionPatterns.Count > 0 && (atkStates[i] > counterThreshold || atkStates[i] == 0))
+        playerAttackHistory.Add(x);
+        if(playerAttackHistory.Count < predictionLength) { return false; }
+        bool counter = false;
+        List<int> recentAttacks = new List<int>();
+        for (int i = playerAttackHistory.Count - predictionLength; i < playerAttackHistory.Count; i++)
         {
-            List<int> recentAttacks = new List<int>(playerAttackHistory);
-            recentAttacks.Reverse();
+            recentAttacks.Add(playerAttackHistory[i]);
+        }
+
+        if (delayState <= 0 && atkStates[i] == 0 && predictionPatterns.Count > 0)
+        {
+            //Debug.Log("Attmepting to match recent attacks: " + string.Join(',', recentAttacks));
+            int occurences = 0;
             foreach (List<int> pattern in predictionPatterns)
             {
-                if (pattern[predictionLength-1] == x)
+                //Debug.Log("Checking against pattern: " + string.Join(',', pattern));
+                if(pattern.SequenceEqual(recentAttacks))
                 {
-                    for (int j = 0; j <= predictionLength - 2; j++)
+                    occurences++;
+                    if(occurences == counterMetric)
                     {
-                        if (pattern[j] != recentAttacks[j]) { break; }
-                        if (j == predictionLength - 2)
+                        counter = true;
+                        if (atkStates[i] == 0)
                         {
-                            AddPlayerPatterns(x);
-                            Debug.Log("Countered!");
-                            return true;
+                            delayState = 0;
+                            Attack(x);
                         }
                     }
                 }
             }
+            //Debug.LogWarning("Done checking.  Found " + occurences + " matches");
         }
-        AddPlayerPatterns(x);
-        return false;
-    }
 
-    void AddPlayerPatterns(int x)
-    {
-        playerAttackHistory.Add(x);
-        int j = playerAttackHistory.Count();
-        if ((j % predictionLength) == 0)
+        if ((playerAttackHistory.Count % predictionLength) == 0)
         {
-            List<int> pattern = new List<int>();
-            for (int k = predictionLength; k >= 1; k--)
-            {
-                pattern.Add(playerAttackHistory[j - k]);
-            }
+            List<int> pattern = new List<int>(recentAttacks);
             predictionPatterns.Add(pattern);
-            Debug.Log("Player Pattern Recorded: " + string.Join(',', pattern));
+            if (predictionPatterns.Count > 10)
+            {
+                predictionPatterns.RemoveAt(0);
+            }
+            //Debug.Log("Player Pattern Recorded: " + string.Join(',', pattern + " | there are now " + predictionPatterns.Count));
         }
+
+        return counter;
     }
 
     public void Clash(int x)
@@ -231,14 +241,31 @@ public class EnemyActions : MonoBehaviour
     public void Countered(int x)
     {
         NewPattern();
-        delayState += attackLength;
-        animator.Play("Up_Clash", 0);
-        player.atkStates[x] = atkStates[x] = 0;
+        atkStates[x] = 0;
+        switch (x)
+        {
+            case 0:
+                animator.Play("Left_Clash", 0);
+                break;
+            case 1:
+                animator.Play("Right_Clash", 0);
+                break;
+            case 2:
+                animator.Play("Up_Clash", 0);
+                break;
+            case 3:
+                animator.Play("Down_Clash", 0);
+                break;
+        }
+        delayState = attackLength + AIDelay;
+        gameManager.clashSFX();
+        counterFade.StartFade();
     }
 
-    public void TakeDamage()
+    public void TakeDamage(int x)
     {
         HP--;
+        bloodFX[x].Play();
         if (HP <= 0)
         {
             atkStates[i] = -1;
@@ -284,6 +311,12 @@ public class EnemyActions : MonoBehaviour
         currentPattern = Random.Range(0, attackPatterns.Count());
         predictionLength = 7 - intelligence;
         if (predictionLength < 2) { predictionLength = 2; }
+        predictionLength = 3;
+        counterMetric = predictionLength switch
+        {
+            <= 2 => 3,
+            >= 3 => 2
+        };
         return attackPatterns;
     }
 

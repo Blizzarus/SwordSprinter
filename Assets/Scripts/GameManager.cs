@@ -23,6 +23,7 @@ public class GameManager : MonoBehaviour
     public GameObject endMenu;
     public TextMeshProUGUI endTitle;
     public Button playButton;
+    public Button cheatModeButton;
     public Button restartButton;
     public Button exitButton;
 
@@ -35,30 +36,33 @@ public class GameManager : MonoBehaviour
     public float enemyDelay;
     int enemiesDefeated;
     int winCon;
+    public bool cheatMode;
     void Awake()
     {
+        startMenu.SetActive(true);
         audio = GetComponent<AudioSource>();
         audio.clip = backgroundMusic;
 
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
         spawnPosition = player.transform.position + new Vector3(35,0,0);
 
-        playButton.onClick.AddListener(Play);
-        restartButton.onClick.AddListener(Restart);
-        exitButton.onClick.AddListener(Exit);
-
         moveSpeed = 12.5f;
         attackLength = 1.0f;
         impactDelay = 1.0f;
         counterThreshold = 0.75f;
 
-        enemyIntelligence = 1;
-        enemyDelay = 1.0f;
+        setEnemyStats();
 
         spawnTime = 3.0f;
         enemiesDefeated = 0;
         winCon = 25;
         encounter = true;
+        cheatMode = false;
+
+        playButton.onClick.AddListener(Play);
+        cheatModeButton.onClick.AddListener(PlayCheat);
+        restartButton.onClick.AddListener(Restart);
+        exitButton.onClick.AddListener(Exit);
     }
 
     IEnumerator SpawnEnemy()
@@ -83,6 +87,13 @@ public class GameManager : MonoBehaviour
             player.EndDance();
             return;
         }
+
+        setEnemyStats();
+        StartCoroutine(SpawnEnemy());
+    }
+
+    void setEnemyStats()
+    {
         enemyIntelligence = enemiesDefeated switch
         {
             <= 1 => 1,
@@ -106,7 +117,6 @@ public class GameManager : MonoBehaviour
             > 9 and <= 20 => 0.7f,
             > 20 => 0.6f
         };
-        StartCoroutine("SpawnEnemy");
     }
 
     public void clashSFX()
@@ -130,7 +140,13 @@ public class GameManager : MonoBehaviour
         audio.Play();
         player.StartRunning();
         encounter = false;
-        StartCoroutine("SpawnEnemy");
+        StartCoroutine(SpawnEnemy());
+    }
+
+    void PlayCheat()
+    {
+        cheatMode = true;
+        Play();
     }
 
     void Restart()
@@ -145,6 +161,7 @@ public class GameManager : MonoBehaviour
 
     public void Lose()
     {
+        audio.loop = false;
         endTitle.color = Color.red;
         endTitle.text = "Game Over!";
         endMenu.SetActive(true);
