@@ -42,6 +42,10 @@ public class EnemyActions : MonoBehaviour
         animator = GetComponent<Animator>();
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+        foreach (ParticleSystem particle in bloodFX)
+        {
+            particle.GetComponent<Renderer>().sortingOrder = 11;
+        }
 
         intelligence = gameManager.enemyIntelligence;
         AIDelay = gameManager.enemyDelay;
@@ -274,14 +278,12 @@ public class EnemyActions : MonoBehaviour
             animator.Play("Die", 1);
             gameManager.dieSFX();
             StartCoroutine(DeleteDeadBody());
+            return;
         }
-        else
-        {
-            animator.Play("Hit", 1);
-            gameManager.hurtSFX();
-            atkStates[i] = 0;
-            NewPattern();
-        }
+        animator.Play("Hit", 1);
+        gameManager.hurtSFX();
+        atkStates[i] = 0;
+        NewPattern();
     }
 
     IEnumerator DeleteDeadBody()
@@ -311,7 +313,6 @@ public class EnemyActions : MonoBehaviour
         currentPattern = Random.Range(0, attackPatterns.Count());
         predictionLength = 7 - intelligence;
         if (predictionLength < 2) { predictionLength = 2; }
-        predictionLength = 3;
         counterMetric = predictionLength switch
         {
             <= 2 => 3,

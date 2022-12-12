@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
     GameManager gameManager;
-    [SerializeField] TextMeshProUGUI playerStatus;
+    [SerializeField] GameObject playerHP;
+    [SerializeField] Sprite damageIcon;
     [SerializeField] TextMeshProUGUI counteredText;
     TextFade counterFade;
     [SerializeField] GameObject clash;
@@ -28,14 +30,19 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
-        clashFX = clash.GetComponent<ParticleSystem>();
         counterFade = counteredText.GetComponent<TextFade>();
+        clashFX = clash.GetComponent<ParticleSystem>();
+        clashFX.GetComponent<Renderer>().sortingOrder = 10;
+        foreach(ParticleSystem particle in bloodFX)
+        {
+            particle.GetComponent<Renderer>().sortingOrder = 11;
+        }
+        
 
         attackLength = gameManager.attackLength;
         impactDelay = gameManager.impactDelay;
         counterThreshold = gameManager.counterThreshold;
-        HP = 10;
-        playerStatus.text = "HP Remaining: " + HP;
+        HP = 4;
 
         SetupAnimations();
     }
@@ -249,23 +256,23 @@ public class PlayerController : MonoBehaviour
         HP--;
         queuedAtk = -1;
         bloodFX[x].Play();
-        if (HP <= 0 && !gameManager.cheatMode)
+        if(!gameManager.cheatMode)
         {
-            atkStates[i] = -1;
-            playerStatus.text = ":(";
-            animator.Play("Die", 1);
-            gameManager.dieSFX();
-            enemy.Cease();
-            StartCoroutine(delayLoseTrigger());
+            GameObject.Find("HP_" + HP).GetComponent<Image>().sprite = damageIcon;
+            if (HP <= 0)
+            {
+                atkStates[i] = -1;
+                animator.Play("Die", 1);
+                gameManager.dieSFX();
+                enemy.Cease();
+                StartCoroutine(delayLoseTrigger());
+                return;
+            }
         }
-        else
-        {
-            playerStatus.text = "HP Remaining: " + HP;
-            animator.Play("Hit", 1);
-            gameManager.hurtSFX();
-            atkStates[i] = 0;
-            delayState = impactDelay / 2;
-        }
+        animator.Play("Hit", 1);
+        gameManager.hurtSFX();
+        atkStates[i] = 0;
+        delayState = impactDelay / 2;
     }
 
     IEnumerator delayLoseTrigger()
@@ -282,13 +289,14 @@ public class PlayerController : MonoBehaviour
     public void EndDance()
     {
         gameManager.encounter = true;
+        GameObject.FindGameObjectWithTag("PWeapon").SetActive(false);
         animator.Play("Dance", 1);
         StartCoroutine(DelayWinTrigger());
     }
 
     IEnumerator DelayWinTrigger()
     {
-        yield return new WaitForSeconds(8);
+        yield return new WaitForSeconds(6.5f);
         gameManager.Win();
     }
 

@@ -9,7 +9,6 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     Vector3 spawnPosition;
-    float spawnTime;
     AudioSource audio;
     [SerializeField] AudioClip backgroundMusic;
     [SerializeField] AudioClip winMusic;
@@ -31,31 +30,29 @@ public class GameManager : MonoBehaviour
     public float attackLength;
     public float impactDelay;
     public float counterThreshold;
+    [SerializeField] float spawnTime;
+    [SerializeField] int winCon;
+
+    int lastClash;
+    int lastHurt;
+    int lastDie;
 
     public int enemyIntelligence;
     public float enemyDelay;
     int enemiesDefeated;
-    int winCon;
     public bool cheatMode;
     void Awake()
     {
         startMenu.SetActive(true);
         audio = GetComponent<AudioSource>();
         audio.clip = backgroundMusic;
-
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
         spawnPosition = player.transform.position + new Vector3(35,0,0);
-
-        moveSpeed = 12.5f;
-        attackLength = 1.0f;
-        impactDelay = 1.0f;
-        counterThreshold = 0.75f;
+        lastClash = lastHurt = lastDie = -1;
 
         setEnemyStats();
 
-        spawnTime = 3.0f;
         enemiesDefeated = 0;
-        winCon = 25;
         encounter = true;
         cheatMode = false;
 
@@ -121,17 +118,35 @@ public class GameManager : MonoBehaviour
 
     public void clashSFX()
     {
-        audio.PlayOneShot(clashSounds[Random.Range(0, clashSounds.Length)]);
+        int rand;
+        do
+        {
+            rand = Random.Range(0, clashSounds.Length);
+        } while (rand == lastClash);
+        lastClash = rand;
+        audio.PlayOneShot(clashSounds[rand]);
     }
 
     public void hurtSFX()
     {
-        audio.PlayOneShot(hurtSounds[Random.Range(0, hurtSounds.Length)]);
+        int rand;
+        do
+        {
+            rand = Random.Range(0, hurtSounds.Length);
+        } while (rand == lastHurt);
+        lastHurt = rand;
+        audio.PlayOneShot(hurtSounds[rand]);
     }
 
     public void dieSFX()
     {
-        audio.PlayOneShot(dieSounds[Random.Range(0, dieSounds.Length)]);
+        int rand;
+        do
+        {
+            rand = Random.Range(0, dieSounds.Length);
+        } while (rand == lastDie);
+        lastDie = rand;
+        audio.PlayOneShot(dieSounds[rand]);
     }
 
     void Play()
