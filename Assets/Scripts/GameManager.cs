@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -15,14 +16,18 @@ public class GameManager : MonoBehaviour
     [SerializeField] AudioClip[] clashSounds;
     [SerializeField] AudioClip[] hurtSounds;
     [SerializeField] AudioClip[] dieSounds;
+    public TextMeshProUGUI timer;
+    int timeElapsed;
     public GameObject enemy;
     public bool encounter;
     PlayerController player;
     public GameObject startMenu;
     public GameObject endMenu;
     public TextMeshProUGUI endTitle;
+    public TextMeshProUGUI scoreboard;
     public Button playButton;
-    public Button cheatModeButton;
+    public Toggle cheatModeToggle;
+    public Toggle hardModeToggle;
     public Button restartButton;
     public Button exitButton;
 
@@ -57,7 +62,6 @@ public class GameManager : MonoBehaviour
         cheatMode = false;
 
         playButton.onClick.AddListener(Play);
-        cheatModeButton.onClick.AddListener(PlayCheat);
         restartButton.onClick.AddListener(Restart);
         exitButton.onClick.AddListener(Exit);
     }
@@ -66,6 +70,12 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(spawnTime);
         Instantiate(enemy, spawnPosition, enemy.transform.rotation);
+    }
+
+    void UpdateTimer()
+    {
+        timeElapsed++;
+        timer.text = TimeSpan.FromSeconds(timeElapsed).ToString("mm\\:ss");
     }
 
     public void EncounterStart()
@@ -79,6 +89,7 @@ public class GameManager : MonoBehaviour
         enemiesDefeated++;
         if(enemiesDefeated >= winCon)
         {
+            CancelInvoke();
             audio.clip = winMusic;
             audio.Play();
             player.EndDance();
@@ -108,11 +119,11 @@ public class GameManager : MonoBehaviour
         };
         enemyDelay = enemiesDefeated switch
         {
-            <= 1 => 1,
+            <= 1 => 1f,
             > 1 and <= 4 => 0.9f,
-            > 4 and <= 9 => 0.8f,
-            > 9 and <= 20 => 0.7f,
-            > 20 => 0.6f
+            > 4 and <= 9 => 0.75f,
+            > 9 and <= 20 => 0.5f,
+            > 20 => 0.4f
         };
     }
 
@@ -121,7 +132,7 @@ public class GameManager : MonoBehaviour
         int rand;
         do
         {
-            rand = Random.Range(0, clashSounds.Length);
+            rand = UnityEngine.Random.Range(0, clashSounds.Length);
         } while (rand == lastClash);
         lastClash = rand;
         audio.PlayOneShot(clashSounds[rand]);
@@ -132,7 +143,7 @@ public class GameManager : MonoBehaviour
         int rand;
         do
         {
-            rand = Random.Range(0, hurtSounds.Length);
+            rand = UnityEngine.Random.Range(0, hurtSounds.Length);
         } while (rand == lastHurt);
         lastHurt = rand;
         audio.PlayOneShot(hurtSounds[rand]);
@@ -143,7 +154,7 @@ public class GameManager : MonoBehaviour
         int rand;
         do
         {
-            rand = Random.Range(0, dieSounds.Length);
+            rand = UnityEngine.Random.Range(0, dieSounds.Length);
         } while (rand == lastDie);
         lastDie = rand;
         audio.PlayOneShot(dieSounds[rand]);
@@ -151,17 +162,14 @@ public class GameManager : MonoBehaviour
 
     void Play()
     {
+        if (hardModeToggle.GetComponent<Toggle>().isOn) { Time.timeScale = 1.5f; }
+        cheatMode = cheatModeToggle.GetComponent<Toggle>().isOn;
+        InvokeRepeating("UpdateTimer", 0, Time.timeScale);
         startMenu.SetActive(false);
         audio.Play();
         player.StartRunning();
         encounter = false;
         StartCoroutine(SpawnEnemy());
-    }
-
-    void PlayCheat()
-    {
-        cheatMode = true;
-        Play();
     }
 
     void Restart()
@@ -177,15 +185,34 @@ public class GameManager : MonoBehaviour
     public void Lose()
     {
         audio.loop = false;
+        scoreboard.text = "";
         endTitle.color = Color.red;
+        endTitle.rectTransform.localPosition = new Vector2(0, 31);
         endTitle.text = "Game Over!";
         endMenu.SetActive(true);
     }
 
     public void Win()
     {
+        if(cheatMode)
+        {
+            endTitle.color = new Color(0.8f, 0.67f, 0);
+            endTitle.text = "You Win!";
+            scoreboard.text = "No high scores in cheat mode though :)";
+            endMenu.SetActive(true);
+            return;
+        }
+        int score = (1500 - timeElapsed) + (100 * player.HP);
+        if (hardModeToggle.GetComponent<Toggle>().isOn)
+        {
+            score *= 2;
+        }
         endTitle.color = new Color(0.8f,0.67f,0);
         endTitle.text = "You Win!";
+        scoreboard.text = "Well done, you completed Level 1!\n"
+            + "Completion Time = " + TimeSpan.FromSeconds(timeElapsed).ToString("mm\\:ss") + "\n"
+            + "HP Remaining = " + player.HP + "\n"
+            + "Total Score = " + score + "!";
         endMenu.SetActive(true);
     }
 }

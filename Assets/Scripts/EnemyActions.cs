@@ -8,7 +8,6 @@ public class EnemyActions : MonoBehaviour
 {
     GameManager gameManager;
     TextFade counterFade;
-    TextMeshProUGUI enemyStatus;
     Animator animator;
     [SerializeField] ParticleSystem[] bloodFX;
     [SerializeField] GameObject[] predictionLines;
@@ -35,11 +34,11 @@ public class EnemyActions : MonoBehaviour
     float impactDelay;
     float counterThreshold;
     int HP;
+    bool justCountered = false;
 
     void Awake()
     {
         counterFade = GameObject.Find("CounterPrompt").GetComponent<TextFade>();
-        enemyStatus = GameObject.Find("EnemyStatus").GetComponent<TextMeshProUGUI>();
         animator = GetComponent<Animator>();
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
@@ -62,7 +61,7 @@ public class EnemyActions : MonoBehaviour
         playerAttackHistory = new List<int>();
         predictionPatterns = new List<List<int>>();
 
-        HP = 1;
+        HP = 2;
     }
 
     // Update is called once per frame
@@ -83,11 +82,6 @@ public class EnemyActions : MonoBehaviour
             // update Atk and Delay states
             UpdateStates();
         }
-    }
-
-    private void LateUpdate()
-    {
-        enemyStatus.text = "Delay: " + delayState + "\nLeft: " + atkStates[0] + "\nRight: " + atkStates[1] + "\nUp: " + atkStates[2] + "\nDown: " + atkStates[3];
     }
 
     void CombatActions()
@@ -248,6 +242,7 @@ public class EnemyActions : MonoBehaviour
 
     public void Countered(int x)
     {
+        justCountered = true;
         NewPattern();
         atkStates[x] = 0;
         predictionLines[x].SetActive(false);
@@ -273,7 +268,8 @@ public class EnemyActions : MonoBehaviour
 
     public void TakeDamage(int x)
     {
-        HP--;
+        if (justCountered) { HP--; justCountered = false; }
+        else { HP = 0; }
         predictionLines[x].SetActive(false);
         bloodFX[x].Play();
         if (HP <= 0)
