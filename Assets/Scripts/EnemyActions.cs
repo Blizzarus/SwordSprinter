@@ -11,6 +11,7 @@ public class EnemyActions : MonoBehaviour
     TextMeshProUGUI enemyStatus;
     Animator animator;
     [SerializeField] ParticleSystem[] bloodFX;
+    [SerializeField] GameObject[] predictionLines;
     PlayerController player;
 
     List<List<int>> attackPatterns; // list of lists of ints used to track enemy attack patterns
@@ -19,7 +20,7 @@ public class EnemyActions : MonoBehaviour
 
     List<int> playerAttackHistory; // list of all attacks the player has executed
     List<List<int>> predictionPatterns; // list of patterns recorded; length varies by enemy intelligence
-    int predictionLength; // value corresponding to the expected next attack
+    int predictionLength; // the length of prediction patterns
     int counterMetric; // the number of times a pattern must be matched in order for the enemy to counter it
 
     public float delayState;
@@ -117,6 +118,7 @@ public class EnemyActions : MonoBehaviour
             }
 
             // otherwise, initate attack
+            predictionLines[j].SetActive(true);
             Attack(j);
         }
     }
@@ -145,6 +147,7 @@ public class EnemyActions : MonoBehaviour
             atkStates[i] -= Time.deltaTime;
             if (atkStates[i] <= 0 && HP > 0)
             {
+                predictionLines[i].SetActive(false);
                 player.TakeDamage(i);
                 atkStates[i] = 0;
                 NewPattern();
@@ -240,12 +243,14 @@ public class EnemyActions : MonoBehaviour
                 break;
         }
         atkStates[x] = 0;
+        predictionLines[x].SetActive(false);
     }
 
     public void Countered(int x)
     {
         NewPattern();
         atkStates[x] = 0;
+        predictionLines[x].SetActive(false);
         switch (x)
         {
             case 0:
@@ -269,6 +274,7 @@ public class EnemyActions : MonoBehaviour
     public void TakeDamage(int x)
     {
         HP--;
+        predictionLines[x].SetActive(false);
         bloodFX[x].Play();
         if (HP <= 0)
         {

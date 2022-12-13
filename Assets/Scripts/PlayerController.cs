@@ -25,7 +25,7 @@ public class PlayerController : MonoBehaviour
     float attackLength;
     float impactDelay;
     float counterThreshold;
-    int HP;
+    public int HP;
 
     void Start()
     {
@@ -42,7 +42,7 @@ public class PlayerController : MonoBehaviour
         attackLength = gameManager.attackLength;
         impactDelay = gameManager.impactDelay;
         counterThreshold = gameManager.counterThreshold;
-        HP = 4;
+        HP = GameObject.Find("PlayerHP").transform.childCount;
 
         SetupAnimations();
     }
