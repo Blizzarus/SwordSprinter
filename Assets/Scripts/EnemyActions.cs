@@ -25,6 +25,7 @@ public class EnemyActions : MonoBehaviour
     public float delayState;
     public List<float> atkStates = new List<float>() { 0, 0, 0, 0 }; // Attack States: 0 = Left, 1 = Right, 2 = Up, 3 = Down
     // NOTE: Enemy attack states are named from the PLAYER perspective (0 = attack to PLAYER's left)
+    float comboMulti = 1;
 
     int i; // index for Max (current active attack)
     int intelligence; // determines pattern complexity and recognition ability
@@ -34,7 +35,6 @@ public class EnemyActions : MonoBehaviour
     float impactDelay;
     float counterThreshold;
     int HP;
-    bool justCountered = false;
 
     void Awake()
     {
@@ -91,9 +91,11 @@ public class EnemyActions : MonoBehaviour
             int j = player.atkStates.IndexOf(player.atkStates.Max());
             if (player.atkStates[j] > AIDelay / 2)
             {
+                comboMulti += 0.1f;
                 Attack(j);
                 return;
             }
+            comboMulti = 1f;
 
             if (nextAttack == attackPatterns[currentPattern].Count())
             {
@@ -220,7 +222,7 @@ public class EnemyActions : MonoBehaviour
 
     public void Clash(int x)
     {
-        delayState = impactDelay;
+        delayState = impactDelay * comboMulti;
         switch (x)
         {
             case 0:
@@ -242,7 +244,6 @@ public class EnemyActions : MonoBehaviour
 
     public void Countered(int x)
     {
-        justCountered = true;
         NewPattern();
         atkStates[x] = 0;
         predictionLines[x].SetActive(false);
@@ -261,15 +262,14 @@ public class EnemyActions : MonoBehaviour
                 animator.Play("Down_Clash", 0);
                 break;
         }
-        delayState = attackLength + AIDelay;
+        delayState = (attackLength * comboMulti) + AIDelay;
         gameManager.clashSFX();
         counterFade.StartFade();
     }
 
     public void TakeDamage(int x)
     {
-        if (justCountered) { HP--; justCountered = false; }
-        else { HP = 0; }
+        HP--;
         predictionLines[x].SetActive(false);
         bloodFX[x].Play();
         if (HP <= 0)

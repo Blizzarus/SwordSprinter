@@ -23,11 +23,14 @@ public class GameManager : MonoBehaviour
     PlayerController player;
     public GameObject startMenu;
     public GameObject endMenu;
+    public GameObject startView;
+    public GameObject tutorialView;
     public TextMeshProUGUI endTitle;
     public TextMeshProUGUI scoreboard;
     public Button playButton;
     public Toggle cheatModeToggle;
     public Toggle hardModeToggle;
+    public Button tutorialButton;
     public Button restartButton;
     public Button exitButton;
 
@@ -64,6 +67,7 @@ public class GameManager : MonoBehaviour
         playButton.onClick.AddListener(Play);
         restartButton.onClick.AddListener(Restart);
         exitButton.onClick.AddListener(Exit);
+        tutorialButton.onClick.AddListener(toggleTutorial);
     }
 
     IEnumerator SpawnEnemy()
@@ -180,6 +184,18 @@ public class GameManager : MonoBehaviour
     void Exit()
     {
         Application.Quit();
+    }
+
+    void toggleTutorial()
+    {
+        if(startView.activeInHierarchy)
+        {
+            startView.SetActive(false);
+            tutorialView.SetActive(true);
+            return;
+        }
+        startView.SetActive(true);
+        tutorialView.SetActive(false);
     }
 
     public void Lose()
