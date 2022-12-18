@@ -270,7 +270,11 @@ public class EnemyActions : MonoBehaviour
     public void TakeDamage(int x)
     {
         HP--;
-        predictionLines[x].SetActive(false);
+        foreach (GameObject line in predictionLines)
+        {
+            line.SetActive(false);
+        }
+        atkStates[0] = atkStates[1] = atkStates[2] = atkStates[3] = 0;
         bloodFX[x].Play();
         if (HP <= 0)
         {
@@ -284,7 +288,6 @@ public class EnemyActions : MonoBehaviour
         }
         animator.Play("Hit", 1);
         gameManager.hurtSFX();
-        atkStates[i] = 0;
         NewPattern();
     }
 

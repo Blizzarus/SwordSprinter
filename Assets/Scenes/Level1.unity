@@ -1691,7 +1691,7 @@ MonoBehaviour:
     Press the W, A, S, & D or Arrow keys to
     attack in different directions.  Enemies will try to attack you from each direction
     too; enemy attacks are indicated by colored lines, showing the path of the incoming
-    attack (Red attacks come from your left, Blue from your right, Yellow from above,
+    attack (Red attacks come from your right, Blue from your left, Yellow from above,
     and Green from below).
 
 

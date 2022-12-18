@@ -79,19 +79,19 @@ public class PlayerController : MonoBehaviour
         if(HP <= 0 && !gameManager.cheatMode) { return; }
         int j;
         // check for user input (TODO: add touch swipe control support)
-        if (Input.GetKeyDown(KeyCode.LeftArrow) && atkStates[0] == 0)
+        if ((Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) && atkStates[0] == 0)
         {
             j = 0;
         }
-        else if (Input.GetKeyDown(KeyCode.RightArrow) && atkStates[1] == 0)
+        else if ((Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) && atkStates[1] == 0)
         {
             j = 1;
         }
-        else if (Input.GetKeyDown(KeyCode.UpArrow) && atkStates[2] == 0)
+        else if ((Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W)) && atkStates[2] == 0)
         {
             j = 2;
         }
-        else if (Input.GetKeyDown(KeyCode.DownArrow) && atkStates[3] == 0)
+        else if ((Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S)) && atkStates[3] == 0)
         {
             j = 3;
         }
